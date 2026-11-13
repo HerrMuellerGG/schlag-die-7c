@@ -253,7 +253,7 @@ function beep(f=660,d=.12,type='sine',vol=.18){if(!SOUND)return;try{AC=AC||new(w
 const fanfare=()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.18,'triangle'),i*120))};
 
 /* ---------- Daten (Supabase) ---------- */
-const SB_URL=''.replace(/\/$/,''),SB_KEY='';
+const SB_URL='https://nwtcegisfqgwjicppdbd.supabase.co'.replace(/\/$/,''),SB_KEY='sb_publishable_rADFnITLKFdEduGzhp6q2A_oMXa-PSR';
 const SB_ON=/^https:\/\//.test(SB_URL)&&SB_KEY.length>20;
 let dbOK=false,dbResults=null,dbState=SB_ON?'wait':'off',seeded=false;
 let localResults=LS.get('results',[]);
