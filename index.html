@@ -203,6 +203,15 @@ input,select,textarea{font:inherit}
 .osk{margin-top:10px;display:flex;flex-direction:column;gap:6px}.okr{display:flex;gap:5px;justify-content:center}
 .osk button{background:rgba(255,255,255,.14);border-radius:9px;height:46px;font-size:20px;font-weight:600;flex:1;max-width:52px;touch-action:none}
 .osk button.wide{max-width:none;flex:5}
+/* v4 */
+.game,.game *{touch-action:none}
+.fzp{text-align:center;line-height:1}.fzl{font-size:clamp(14px,2.2vh,20px);color:var(--muted);margin-bottom:8px;font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.fzs{font-size:clamp(56px,14vh,130px);font-weight:600;color:#fff}.fzs.it{font-family:"Times New Roman",Georgia,serif;font-style:italic;font-weight:400}
+.mgrid{height:100%;max-height:calc(100vh - 110px);aspect-ratio:5/4;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(4,1fr);gap:9px;align-self:center}
+.mcard{border-radius:14px;background:linear-gradient(135deg,#1d6b6f,#13283b);border:3px solid var(--acc);font-size:min(9vh,64px);font-weight:600;color:#0b1826;touch-action:none;position:relative}
+.mcard span{visibility:hidden}.mcard.up{background:#eef7f8}.mcard.up span{visibility:visible}
+.mcard.own-g{background:#cfe4ff;border-color:var(--g)}.mcard.own-k{background:#ffe0cc;border-color:var(--k)}
+.mcard.own-g span,.mcard.own-k span{visibility:visible}
 </style>
 </head>
 <body>
@@ -226,7 +235,7 @@ let ROLE=LS.get('role',''),LOCK=LS.get('lock',''),DEVNAME=LS.get('devname','Ger�
 const ROT='<div class="rot">📱↻ Bitte das Gerät quer halten</div>';
 
 /* ---------- Einstellungen ---------- */
-const DEF={tzSteps:6,tzPenalty:1,tzLvG:4,tzLvK:5,rkWins:2,rkHandicap:20,blTarget:10,blVisG:3,blVisK:2,flG:5,flK:6,flPool:'leicht',tiG:5,tiK:5,faG:5,faK:5,zjG:15,zjK:20,seN:3,seShow:1.2,wbN:5};
+const DEF={tzSteps:6,tzPenalty:1,tzLvG:4,tzLvK:5,rkWins:2,rkHandicap:20,blTarget:10,blVisG:3,blVisK:2,flG:5,flK:6,flPool:'leicht',tiG:5,tiK:5,krG:5,krK:6,fzG:5,fzK:6,faG:5,faK:5,zjG:15,zjK:20,seN:3,seShow:1.2,wbN:5};
 const S=Object.assign({},DEF,LS.get('game3',{}));
 let SOUND=LS.get('sound',true);
 const CFG=Object.assign({title:'Schlag die 7c',subtitle:'35. Oberschule · Winterfest',gName:'Gäste',kName:'7c',logo:'',pin:'3535',sitepw:'winterfest',enabled:true,osk:false,win:60,clearedAt:0,rotate:true},LS.get('cfg3',{}));
@@ -238,12 +247,13 @@ const GAMES={
   tauziehen:{name:'Mathe-Tauziehen',icon:'🪢',desc:'Wer schneller richtig rechnet, zieht das Seil zu sich.',label:'Schnellster Sieg',fmt:v=>num(v,1)+' s'},
   reaktion:{name:'Reaktionsduell',icon:'⚡',desc:'Grün = tippen! Wer ist schneller?',label:'Schnellste Reaktion',fmt:v=>Math.round(v)+' ms'},
   blind:{name:'Blind-Stopp',icon:'⏱️',desc:'Stoppe ohne Uhr bei genau X Sekunden.',label:'Kleinste Abweichung',fmt:v=>'± '+num(v,2)+' s'},
-  raten:{name:'Rate-Duell',icon:'🏳️🐾',desc:'Flaggen oder Tiere erraten – wer zuerst richtig tippt, punktet.',label:'Schnellster Sieg',fmt:v=>num(v,1)+' s'},
+  raten:{name:'Rate-Duell',icon:'🏳️🐾',desc:'Flaggen, Tiere, Körper oder Formeln erraten – wer zuerst richtig tippt, punktet.',label:'Schnellster Sieg',fmt:v=>num(v,1)+' s'},
   farben:{name:'Farben-Falle',icon:'🎨',desc:'Tippe die Farbe der Schrift – nicht das Wort!',label:'Schnellster Sieg',fmt:v=>num(v,1)+' s'},
   zahlen:{name:'Zahlen-Jagd',icon:'🔢',desc:'Tippe die Zahlen der Reihe nach an – schneller als die 7c.',label:'Schnellste Zeit',fmt:v=>num(v,1)+' s'},
   schaetzen:{name:'Schätz-Duell',icon:'🔵',desc:'Wie viele Punkte waren das? Wer näher dran ist, punktet.',label:'Genaueste Schätzung',fmt:v=>'Ø '+num(v,0)+' % daneben'},
   wuerfel:{name:'Würfel-Blick',icon:'🧊',desc:'Was sieht man von vorne? Finde die richtige Ansicht.',label:'Schnellster Sieg',fmt:v=>num(v,1)+' s'},
-  ttt:{name:'Tic-Tac-Toe',icon:'⭕',desc:'Klassisch oder Hardcore – wer schafft drei in einer Reihe?',label:'',noValue:true,fmt:v=>''}
+  ttt:{name:'Tic-Tac-Toe',icon:'⭕',desc:'Klassisch oder Hardcore – wer schafft drei in einer Reihe?',label:'',noValue:true,fmt:v=>''},
+  memory:{name:'Formel-Memory',icon:'🧠',desc:'Findet die Paare mathematischer Zeichen – wer hat mehr?',label:'',noValue:true,fmt:v=>''}
 };
 const gdesc=k=>k==='blind'?`Stoppe ohne Uhr bei genau ${S.blTarget} Sekunden.`:GAMES[k].desc;
 
@@ -366,7 +376,7 @@ function renderTop(){
 }
 function render(){const el=$('#screen');el.innerHTML='';
   const gv=gateView();if(gv&&VIEW!=='settings'){(gv==='off'?vOff:vLogin)(el);return}
-  ({start:vStart,menu:vMenu,board:vBoard,settings:vSet,tauziehen:vTau,reaktion:vReak,blind:vBlind,raten:vRaten,farben:vFarb,zahlen:vZahl,schaetzen:vSchaetz,wuerfel:vWuerfel,ttt:vTTT}[VIEW]||vMenu)(el)}
+  ({start:vStart,menu:vMenu,board:vBoard,settings:vSet,tauziehen:vTau,reaktion:vReak,blind:vBlind,raten:vRaten,farben:vFarb,zahlen:vZahl,schaetzen:vSchaetz,wuerfel:vWuerfel,ttt:vTTT,memory:vMemory}[VIEW]||vMenu)(el)}
 
 /* ---------- Overlays ---------- */
 function openOv(html){closeOv();const o=document.createElement('div');o.className='ov';o.id='ov';o.innerHTML=`<div class="ovb">${html}</div>`;document.body.appendChild(o);return o}
@@ -604,11 +614,6 @@ const FLAGS=[
 function deck(pool){let q=[];return()=>{if(!q.length)q=shuffle(pool.slice());return q.pop()}}
 /* ---------- Tier-Duell ---------- */
 const ANIMALS=[['🐶','Hund'],['🐱','Katze'],['🐭','Maus'],['🐹','Hamster'],['🐰','Hase'],['🦊','Fuchs'],['🐻','Bär'],['🐼','Panda'],['🐨','Koala'],['🐯','Tiger'],['🦁','Löwe'],['🐮','Kuh'],['🐷','Schwein'],['🐸','Frosch'],['🐵','Affe'],['🐔','Huhn'],['🐧','Pinguin'],['🦆','Ente'],['🦅','Adler'],['🦉','Eule'],['🦇','Fledermaus'],['🐺','Wolf'],['🐴','Pferd'],['🐝','Biene'],['🦋','Schmetterling'],['🐌','Schnecke'],['🐞','Marienkäfer'],['🐜','Ameise'],['🕷️','Spinne'],['🦂','Skorpion'],['🐢','Schildkröte'],['🐍','Schlange'],['🦎','Eidechse'],['🐙','Krake'],['🦀','Krabbe'],['🦞','Hummer'],['🐡','Kugelfisch'],['🐬','Delfin'],['🐳','Wal'],['🦈','Hai'],['🐊','Krokodil'],['🐆','Leopard'],['🦓','Zebra'],['🦍','Gorilla'],['🐘','Elefant'],['🦛','Nilpferd'],['🦏','Nashorn'],['🐪','Kamel'],['🦒','Giraffe'],['🦘','Känguru'],['🐑','Schaf'],['🐐','Ziege'],['🦌','Hirsch'],['🐓','Hahn'],['🦃','Truthahn'],['🦚','Pfau'],['🦜','Papagei'],['🦢','Schwan'],['🦩','Flamingo'],['🐿️','Eichhörnchen'],['🦔','Igel'],['🦦','Otter'],['🦥','Faultier'],['🦨','Stinktier'],['🦡','Dachs'],['🦫','Biber'],['🦭','Robbe'],['🦬','Bison']];
-function vRaten(el){
-  el.innerHTML=`<div class="game"><div class="center"><div class="setup"><h2>🏳️🐾 Rate-Duell</h2><p>Was wollt ihr raten? Wer zuerst richtig tippt, bekommt den Punkt – wer falsch tippt, ist für diese Runde raus.</p>
-  <div class="startbtns" style="margin:6px 0 0"><button class="sbtn" data-m="fl" style="min-width:220px;padding:20px 26px">🏳️<b>Flaggen</b><span>${esc(CFG.gName)} ${+S.flG||5} · ${esc(CFG.kName)} ${+S.flK||6} Punkte</span></button><button class="sbtn" data-m="ti" style="min-width:220px;padding:20px 26px">🐾<b>Tiere</b><span>${esc(CFG.kName)} sieht nur den Schatten</span></button></div></div></div>${ROT}</div>`;
-  $$('[data-m]',el).forEach(b=>b.onclick=()=>{beep(520,.05);(b.dataset.m==='fl'?rFlag:rTier)(el)});
-}
 function rFlag(el){
   const pool=FLAGS.filter(f=>S.flPool==='alle'||f.e);const nx=deck(pool);
   quizDuel(el,{id:'raten',mode:'Flaggen',auto:true,need:{g:Math.max(1,+S.flG||5),k:Math.max(1,+S.flK||6)},
@@ -621,6 +626,49 @@ function rTier(el){
     makeRound:()=>{const a=nx();const o=shuffle(ANIMALS.filter(x=>x!==a)).slice(0,3);
       return{prompt:{g:`<span class="emo">${a[0]}</span>`,k:`<span class="emo sil">${a[0]}</span>`},opts:[a,...o].map(x=>({h:esc(x[1]),ok:x===a}))}}});
 }
+function vRaten(el){
+  const tile=(m,ic,t,s)=>`<button class="sbtn" data-m="${m}" style="min-width:0;padding:16px 18px;font-size:46px">${ic}<b style="font-size:24px">${t}</b><span>${s}</span></button>`;
+  el.innerHTML=`<div class="game"><div class="center"><div class="setup"><h2>🏳️🐾 Rate-Duell</h2><p>Was wollt ihr raten? Wer zuerst richtig tippt, bekommt den Punkt – wer falsch tippt, ist für diese Runde raus.</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">${tile('fl','🏳️','Flaggen','Welches Land ist das?')}${tile('ti','🐾','Tiere',esc(CFG.kName)+' sieht nur den Schatten')}${tile('kr','🧊','Körper','Welcher geometrische Körper?')}${tile('fz','📐','Formeln & Einheiten','Welche Größe ist gemeint?')}</div></div></div>${ROT}</div>`;
+  $$('[data-m]',el).forEach(b=>b.onclick=()=>{beep(520,.05);const m=b.dataset.m;
+    if(m==='fz'){const c=$('.setup',el);c.innerHTML=`<h2>📐 Formeln & Einheiten</h2><p>Zu welcher mathematischen oder physikalischen Größe gehört das Formelzeichen bzw. die Einheit? Für welche Klassenstufe?</p>
+      <div class="startbtns" style="margin:6px 0 0"><button class="sbtn" data-l="A" style="min-width:220px;padding:20px 26px">🎒<b>Klasse 1–7</b><span>Längen, Massen, Zeit, Fläche …</span></button><button class="sbtn" data-l="B" style="min-width:220px;padding:20px 26px">🎓<b>Klasse 8–10</b><span>Kraft, Druck, Strom, Energie …</span></button></div>`;
+      $$('[data-l]',c).forEach(x=>x.onclick=()=>{beep(520,.05);rFormel(el,x.dataset.l)});return}
+    ({fl:rFlag,ti:rTier,kr:rKoerper})[m](el)});
+}
+/* ---------- Körper ---------- */
+const KS='stroke="#1d2a33" stroke-width="2.2" stroke-linejoin="round"';
+const KD='stroke="#1d2a33" stroke-width="1.6" stroke-dasharray="5 4" fill="none"';
+const KC={f:'#54c7cc',t:'#9fe3e6',r:'#2a9ea4'};
+const P=(pts,f)=>`<polygon points="${pts}" fill="${f}" ${KS}/>`;
+const BODIES=[
+ ['Würfel',P('50,60 120,60 120,130 50,130',KC.f)+P('50,60 120,60 150,35 80,35',KC.t)+P('120,60 150,35 150,105 120,130',KC.r)],
+ ['Quader',P('25,75 140,75 140,125 25,125',KC.f)+P('25,75 140,75 168,50 53,50',KC.t)+P('140,75 168,50 168,100 140,125',KC.r)],
+ ['Kugel',`<defs><radialGradient id="kg" cx="38%" cy="35%" r="70%"><stop offset="0" stop-color="#d9f6f7"/><stop offset="1" stop-color="#2a9ea4"/></radialGradient></defs><circle cx="100" cy="82" r="58" fill="url(#kg)" ${KS}/><path d="M42,82 A58,15 0 0,0 158,82" fill="none" stroke="#1d2a33" stroke-width="1.6"/><path d="M42,82 A58,15 0 0,1 158,82" ${KD}/>`],
+ ['Zylinder',`<path d="M55,40 L55,122 A45,13 0 0,0 145,122 L145,40 Z" fill="${KC.f}" ${KS}/><ellipse cx="100" cy="40" rx="45" ry="13" fill="${KC.t}" ${KS}/><path d="M55,122 A45,13 0 0,1 145,122" ${KD}/>`],
+ ['Kegel',`<path d="M45,122 L100,22 L155,122 A55,14 0 0,1 45,122 Z" fill="${KC.f}" ${KS}/><path d="M45,122 A55,14 0 0,1 155,122" ${KD}/>`],
+ ['Pyramide',P('40,125 130,125 100,25',KC.f)+P('130,125 165,98 100,25',KC.r)+`<path d="M40,125 L75,98 L165,98 M75,98 L100,25" ${KD}/>`],
+ ['Dreieckspyramide',P('42,128 150,128 92,30',KC.f)+P('150,128 120,96 92,30',KC.r)+`<path d="M42,128 L120,96" ${KD}/>`],
+ ['Prisma',P('40,128 75,62 125,37 90,103',KC.t)+P('75,62 125,37 160,103 110,128',KC.r)+P('40,128 110,128 75,62',KC.f)+`<path d="M90,103 L160,103" ${KD}/>`],
+ ['Halbkugel',`<path d="M45,72 A55,62 0 0,0 155,72 Z" fill="${KC.f}" ${KS}/><ellipse cx="100" cy="72" rx="55" ry="15" fill="${KC.t}" ${KS}/>`],
+ ['Kegelstumpf',`<path d="M45,122 L72,42 L128,42 L155,122 A55,14 0 0,1 45,122 Z" fill="${KC.f}" ${KS}/><ellipse cx="100" cy="42" rx="28" ry="8" fill="${KC.t}" ${KS}/><path d="M45,122 A55,14 0 0,1 155,122" ${KD}/>`]
+].map(([n,s])=>({n,s:`<svg viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">${s}</svg>`}));
+function rKoerper(el){const nx=deck(BODIES);
+  quizDuel(el,{id:'raten',mode:'Körper',auto:true,need:{g:Math.max(1,+S.krG||5),k:Math.max(1,+S.krK||6)},pcls:'light',
+    makeRound:()=>{const b=nx();const o=shuffle(BODIES.filter(x=>x!==b)).slice(0,3);return{prompt:{g:b.s,k:b.s},opts:[b,...o].map(x=>({h:esc(x.n),ok:x===b}))}}})}
+/* ---------- Formeln & Einheiten ---------- */
+const DIM={Länge:'L',Weg:'L',Umfang:'L',Höhe:'L',Radius:'L',Durchmesser:'L',Wellenlänge:'L',Masse:'M',Zeit:'T',Periodendauer:'T',Volumen:'V',Flächeninhalt:'A',Temperatur:'K',Geschwindigkeit:'v',Beschleunigung:'a',Kraft:'F',Druck:'p',Energie:'E',Arbeit:'E',Leistung:'P',Spannung:'U',Stromstärke:'I',Widerstand:'R',Frequenz:'f',Dichte:'rho',Ladung:'Q',Wirkungsgrad:'eta',Kreiszahl:'pi',Winkel:'alpha'};
+const FZ={
+ A:[['E','cm','Länge'],['E','m','Länge'],['E','km','Länge'],['E','kg','Masse'],['E','g','Masse'],['E','t','Masse'],['E','s','Zeit'],['E','min','Zeit'],['E','h','Zeit'],['E','l','Volumen'],['E','ml','Volumen'],['E','cm³','Volumen'],['E','m²','Flächeninhalt'],['E','°C','Temperatur'],['E','km/h','Geschwindigkeit'],
+    ['F','A','Flächeninhalt'],['F','u','Umfang'],['F','V','Volumen'],['F','t','Zeit'],['F','s','Weg'],['F','v','Geschwindigkeit'],['F','m','Masse']],
+ B:[['F','F','Kraft'],['F','p','Druck'],['F','W','Arbeit'],['F','E','Energie'],['F','P','Leistung'],['F','U','Spannung'],['F','I','Stromstärke'],['F','R','Widerstand'],['F','ρ','Dichte'],['F','η','Wirkungsgrad'],['F','f','Frequenz'],['F','T','Periodendauer'],['F','a','Beschleunigung'],['F','λ','Wellenlänge'],['F','ϑ','Temperatur'],['F','r','Radius'],['F','d','Durchmesser'],['F','π','Kreiszahl'],['F','α','Winkel'],
+    ['E','N','Kraft'],['E','Pa','Druck'],['E','J','Energie'],['E','W','Leistung'],['E','V','Spannung'],['E','A','Stromstärke'],['E','Ω','Widerstand'],['E','Hz','Frequenz'],['E','kWh','Energie'],['E','m/s²','Beschleunigung'],['E','kg/m³','Dichte'],['E','C','Ladung'],['E','K','Temperatur'],['E','bar','Druck'],['E','m/s','Geschwindigkeit']]
+};
+function rFormel(el,lv){const items=FZ[lv];const nx=deck(items);const names=[...new Set(items.map(x=>x[2]))];
+  quizDuel(el,{id:'raten',mode:'Formeln & Einheiten (Kl. '+(lv==='A'?'1–7':'8–10')+')',auto:true,need:{g:Math.max(1,+S.fzG||5),k:Math.max(1,+S.fzK||6)},pcls:'dark',
+    makeRound:()=>{const[t,sym,ans]=nx();const o=shuffle(names.filter(n=>DIM[n]!==DIM[ans])).slice(0,3);
+      const p=`<div class="fzp"><div class="fzl">${t==='F'?'Formelzeichen':'Einheit'}</div><div class="fzs${t==='F'?' it':''}">${esc(sym)}</div></div>`;
+      return{prompt:{g:p,k:p},opts:[ans,...o].map(n=>({h:esc(n),ok:n===ans}))}}})}
 /* ---------- Farben-Falle ---------- */
 const COLS=[['Rot','#ff3b3b'],['Blau','#3d7bff'],['Grün','#2fcf48'],['Gelb','#ffd60a'],['Lila','#b45cff'],['Orange','#ff8c1a']];
 function vFarb(el){
@@ -748,6 +796,24 @@ function vTTT(el){
   draw();
 }
 
+/* ---------- Formel-Memory ---------- */
+const MSYM=['π','√','∞','≈','≠','≤','∑','∠','⊥','∥','%','÷','±','°','△','²','∈','⌀'];
+function vMemory(el){
+  const syms=shuffle(MSYM.slice()).slice(0,10);const cards=shuffle([...syms,...syms].map((s,i)=>({s,i})));
+  let turn='g',open=[],busy=false,over=false,started=false;const score={g:0,k:0},owner={};
+  el.innerHTML=`<div class="game"><div class="tttw"><div class="tside g" id="ms-g"><div class="tsym" id="mc-g">0</div><div class="sh">${esc(CFG.gName)}</div><div class="tturn" id="mt-g"></div></div><div class="mgrid" id="mg">${cards.map((c,i)=>`<button class="mcard" data-i="${i}"><span>${c.s}</span></button>`).join('')}</div><div class="tside k" id="ms-k"><div class="tsym" id="mc-k">0</div><div class="sh">${esc(CFG.kName)}</div><div class="tturn" id="mt-k"></div></div></div><div class="center" id="ctr"></div>${ROT}</div>`;
+  const ctr=$('#ctr',el),bs=$$('.mcard',el);
+  function draw(){['g','k'].forEach(s=>{$('#mc-'+s,el).textContent=score[s];$('#ms-'+s,el).classList.toggle('act',started&&!over&&turn===s);$('#mt-'+s,el).textContent=started&&!over&&turn===s?'ist dran!':''})}
+  function flip(i){if(!started||busy||over||owner[i]||open.includes(i))return;bs[i].classList.add('up');open.push(i);beep(620,.04);
+    if(open.length<2)return;const[a,b]=open;
+    if(cards[a].s===cards[b].s){owner[a]=owner[b]=turn;bs[a].classList.add('own-'+turn);bs[b].classList.add('own-'+turn);score[turn]++;open=[];beep(turn==='g'?760:600,.12);draw();
+      if(score.g+score.k===syms.length){over=true;draw();const w=score.g>score.k?'g':score.k>score.g?'k':'draw';later(()=>finish('memory',w,null,`Paare: ${esc(CFG.gName)} ${score.g} · ${esc(CFG.kName)} ${score.k}`),900)}}
+    else{busy=true;later(()=>{bs[a].classList.remove('up');bs[b].classList.remove('up');open=[];busy=false;turn=turn==='g'?'k':'g';draw()},1100)}}
+  $('#mg',el).addEventListener('pointerdown',e=>{const b=e.target.closest('.mcard');if(!b)return;e.preventDefault();flip(+b.dataset.i)});
+  intro(ctr,'🧠 Formel-Memory',`Findet die Paare mathematischer Zeichen! Wer ein Paar findet, darf nochmal. Wer am Ende mehr Paare hat, gewinnt. Die ${esc(CFG.gName)} beginnen.`,'Start!',()=>{ctr.innerHTML='';started=true;draw()});
+  draw();
+}
+
 /* ---------- Bestenliste ---------- */
 let boardMode='overview',rotPaused=false,rotIdx=0,announced=new Set(),annQ=[],annBusy=false;
 function seedAnn(){for(const r of results())if(r.name||Date.now()-r.ts>600000)announced.add(r.id)}
@@ -819,6 +885,8 @@ function vSet(el){
   <div class="grp"><h3>🏳️ Rate-Duell: Flaggen</h3>${nf('flG','Punkte zum Sieg – Besucher',1,15,1)}${nf('flK','Punkte zum Sieg – Klasse',1,15,1)}
     <div class="fr"><label>Flaggen</label><select data-s="flPool"><option value="leicht"${S.flPool==='leicht'?' selected':''}>Bekannte (${FLAGS.filter(f=>f.e).length})</option><option value="alle"${S.flPool==='alle'?' selected':''}>Alle (${FLAGS.length})</option></select></div></div>
   <div class="grp"><h3>🐾 Rate-Duell: Tiere</h3>${nf('tiG','Punkte zum Sieg – Besucher',1,15,1)}${nf('tiK','Punkte zum Sieg – Klasse',1,15,1,'die Klasse sieht nur den Schatten')}</div>
+  <div class="grp"><h3>🧊 Rate-Duell: Körper</h3>${nf('krG','Punkte zum Sieg – Besucher',1,15,1)}${nf('krK','Punkte zum Sieg – Klasse',1,15,1)}</div>
+  <div class="grp"><h3>📐 Rate-Duell: Formeln & Einheiten</h3>${nf('fzG','Punkte zum Sieg – Besucher',1,15,1)}${nf('fzK','Punkte zum Sieg – Klasse',1,15,1)}</div>
   <div class="grp"><h3>🎨 Farben-Falle</h3>${nf('faG','Punkte zum Sieg – Besucher',1,15,1)}${nf('faK','Punkte zum Sieg – Klasse',1,15,1,'Knöpfe der Klasse werden gemischt')}</div>
   <div class="grp"><h3>🔢 Zahlen-Jagd</h3>${nf('zjG','Zahlen bis – Besucher',5,40,1)}${nf('zjK','Zahlen bis – Klasse',5,40,1)}</div>
   <div class="grp"><h3>🔵 Schätz-Duell</h3>${nf('seN','Punkte zum Sieg',1,9,1)}${nf('seShow','Anzeigedauer (s)',0.3,5,0.1)}</div>
@@ -858,7 +926,9 @@ function oskBind(o,inp,submit){$$('.osk button',o).forEach(b=>b.addEventListener
   if(c==='⌫')v=v.slice(0,-1);else if(v.length<14){let ch=c;if(!v||/[ \-]$/.test(v))ch=ch.toUpperCase();v+=ch}inp.value=v;beep(700,.02)}))}
 
 /* ---------- Start ---------- */
-document.addEventListener('gesturestart',e=>e.preventDefault());
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('touchmove',e=>{if(e.touches.length>1||e.scale!==undefined&&e.scale!==1)e.preventDefault()},{passive:false});
+let lastTouchEnd=0;document.addEventListener('touchend',e=>{const t=Date.now();if(t-lastTouchEnd<350&&!e.target.closest('input,textarea,select'))e.preventDefault();lastTouchEnd=t},{passive:false});
 VIEW=location.hash==='#bestenliste'?'board':home();
 renderTop();render();initDb();
 </script>
